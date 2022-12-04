@@ -1,43 +1,31 @@
-from rest_framework.views import APIView
-from rest_framework import (
-    filters,
-    mixins,
-    viewsets,
-    status,
-)
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
+import random
+
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-import random
-
-from .serializers import (
-    RegisterAndSendConfirmCodeSerializer,
-    CustomGetTokenSerializer,
-    GetOrCreateUsersSerializer,
-    GetInfoAboutMeSerializer,
-    CertainUserSerializer,
-    CategorySerializer,
-    GenreSerializer,
-    TitleSerializer,
-    TitleReadSerializer,
-    ReviewSerializer,
-    CommentSerializer
-)
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, Genre, Review, Title
 from users.models import User
-from reviews.models import Category, Genre, Title, Review
-from .permissions import (
-    IsAdminOrSuperuser,
-    ISAdminOnlyEdit,
-    ISAdminAuthorOrSuperuser,
-)
-from .filters import TitleFilter
+
 from api_yamdb.settings import EMAIL_HOST_USER
+
+from .filters import TitleFilter
+from .permissions import (ISAdminAuthorOrSuperuser, ISAdminOnlyEdit,
+                          IsAdminOrSuperuser)
+from .serializers import (CategorySerializer, CertainUserSerializer,
+                          CommentSerializer, CustomGetTokenSerializer,
+                          GenreSerializer, GetInfoAboutMeSerializer,
+                          GetOrCreateUsersSerializer,
+                          RegisterAndSendConfirmCodeSerializer,
+                          ReviewSerializer, TitleReadSerializer,
+                          TitleSerializer)
 
 
 class CreateListDestroyViewSet(
