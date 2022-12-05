@@ -68,8 +68,6 @@ POSTGRES_USER - postgres (по умолчанию)
 POSTGRES_PASSWORD - postgres (по умолчанию)
 DB_HOST - db
 DB_PORT - 5432
-SECRET_KEY - секретный ключ приложения django (необходимо чтобы были экранированы или отсутствовали скобки)
-ALLOWED_HOSTS - список разрешённых адресов
 TELEGRAM_TO - id своего телеграм-аккаунта (можно узнать у @userinfobot, команда /start)
 TELEGRAM_TOKEN - токен бота (получить токен можно у @BotFather, /token, имя бота)
 ```
