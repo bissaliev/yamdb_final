@@ -209,4 +209,3 @@ python manage.py loaddata infra/fixtures.json
 - [@TemaKut](https://github.com/TemaKut)
 - [@AnaKuzi](https://github.com/AnaKuzi)
 - [@bissaliev](https://github.com/bissaliev)
-
