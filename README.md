@@ -204,6 +204,16 @@ python3 manage.py shell
 >>> quit()
 python manage.py loaddata infra/fixtures.json
 
+## Ссылки
+### Документация API YaMDb - эндпойнт:
+```json
+/redoc/
+```
+http://158.160.41.34/redoc/
+### Развёрнутый проект:
+http://158.160.41.34/api/v1/  
+http://158.160.41.34/admin/
+
 ### Разработчики:
 
 - [@TemaKut](https://github.com/TemaKut)
