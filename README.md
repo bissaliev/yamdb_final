@@ -199,6 +199,7 @@ python manage.py migrate
 При необходимости наполните базу данных начальными тестовыми данными:
 ```
 python3 manage.py shell
+
 >>> from django.contrib.contenttypes.models import ContentType
 >>> ContentType.objects.all().delete()
 >>> quit()
