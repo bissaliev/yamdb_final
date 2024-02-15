@@ -2,7 +2,7 @@ from rest_framework import permissions
 
 
 class IsAdminOrSuperuser(permissions.BasePermission):
-    """ Доступ только для админов или суперюзеров. """
+    """Доступ только для админов или суперюзеров."""
 
     def has_permission(self, request, view):
 
@@ -13,7 +13,7 @@ class IsAdminOrSuperuser(permissions.BasePermission):
 
 
 class ISAdminOnlyEdit(permissions.BasePermission):
-    """ Доступ только для админов или суперюзеров. """
+    """Доступ только для админов или суперюзеров."""
 
     def has_permission(self, request, view):
 

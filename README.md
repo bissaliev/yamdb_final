@@ -138,38 +138,46 @@ docker-compose -f infra/docker-compose.yaml exec web python manage.py loaddata f
 ```
 ssh username@server_address
 ```
+
 Проверьте статус nginx:
 ```
 sudo service nginx status
 ```
+
 Если nginx запущен, остановите его:
 ```
 sudo systemctl stop nginx
 ```
+
 Установите Docker и Docker-compose:
 ```
 sudo apt install docker.io
 sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 ```
+
 Проверьте корректность установки Docker-compose:
 ```
 sudo  docker-compose --version
 ```
-Создайте папку `nginx`:
+
+Создайте папку nginx:
 ```
 mkdir nginx
 ```
 ### После успешного деплоя:
+
 Соберите статические файлы (статику):
 ```
 docker-compose exec web python manage.py collectstatic --no-input
 ```
+
 Примените миграции:
 ```
 (опционально) docker-compose exec web python manage.py makemigrations
 docker-compose exec web python manage.py migrate --noinput
 ```
+
 Создайте суперпользователя:
 ```
 docker-compose exec web python manage.py createsuperuser
@@ -184,36 +192,46 @@ docker-compose exec web python manage.py loaddata fixtures.json
 ```
 
 Также можно выполнить эти действия внутри контейнера. Отобразите список работающих контейнеров:
+
 ```
 sudo docker container ls -a
 ```
+
+
 В списке контейнеров копируйте CONTAINER ID контейнера username/api_yamdb:latest (username - имя пользователя на DockerHub).   
 Выполните вход в контейнер:
+
 ```
 sudo docker exec -it <CONTAINER_ID> bash
 ```
-Внутри контейнера выполните миграции:
-```
-python manage.py migrate
-```
-При необходимости наполните базу данных начальными тестовыми данными:
-```
-python3 manage.py shell
 
->>> from django.contrib.contenttypes.models import ContentType
->>> ContentType.objects.all().delete()
->>> quit()
+Внутри контейнера выполните миграции:
+
+```
+python3 manage.py migrate
+```
+
+При необходимости наполните базу данных начальными тестовыми данными:
+
+```bash
+python3 manage.py shell
+```
+
+```python
+from django.contrib.contenttypes.models import ContentType
+ContentType.objects.all().delete()
+quit()
 python manage.py loaddata infra/fixtures.json
+```
 
 ## Ссылки
 ### Документация API YaMDb - эндпойнт:
-```json
-/redoc/
-```
-http://158.160.41.34/redoc/
-### Развёрнутый проект:
-http://158.160.41.34/api/v1/  
-http://158.160.41.34/admin/
+
+
+[redoc/](http://127.0.0.1:8000/redoc/)
+<!-- ### Развёрнутый проект: -->
+<!-- http://158.160.41.34/api/v1/   -->
+<!-- http://158.160.41.34/admin/ -->
 
 ### Разработчики:
 

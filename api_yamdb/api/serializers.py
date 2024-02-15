@@ -6,7 +6,8 @@ from users.models import USER, User
 
 
 class RegisterAndSendConfirmCodeSerializer(serializers.ModelSerializer):
-    """ Сериализатор отправки кода на email. """
+    """Сериализатор отправки кода на email."""
+
     confirmation_code = serializers.CharField(required=False, write_only=True)
 
     def validate(self, data):
@@ -21,7 +22,7 @@ class RegisterAndSendConfirmCodeSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """ Сериализатор для получения и создания категорий произведений. """
+    """Сериализатор для получения и создания категорий произведений."""
 
     class Meta:
         fields = ("name", "slug",)
@@ -29,7 +30,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    """ Сериализатор для получения и создания жанров произведений. """
+    """Сериализатор для получения и создания жанров произведений."""
 
     class Meta:
         fields = ("name", "slug",)
@@ -37,7 +38,8 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    """ Сериализатор для создания и редактирования произведений. """
+    """Сериализатор для создания и редактирования произведений."""
+
     category = serializers.SlugRelatedField(
         slug_field="slug", queryset=Category.objects.all()
     )
@@ -51,7 +53,8 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
-    """ Сериализатор для получения произведений. """
+    """Сериализатор для получения произведений."""
+
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
     rating = serializers.IntegerField(
@@ -64,14 +67,14 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
 
 class CustomGetTokenSerializer(serializers.Serializer):
-    """ Сериализатор получения токена. """
+    """Сериализатор получения токена."""
 
     confirmation_code = serializers.CharField()
     username = serializers.CharField()
 
 
 class GetOrCreateUsersSerializer(serializers.ModelSerializer):
-    """ Создаём или получаем пользователей. """
+    """Создаём или получаем пользователей."""
 
     class Meta:
         model = User
@@ -86,7 +89,7 @@ class GetOrCreateUsersSerializer(serializers.ModelSerializer):
 
 
 class GetInfoAboutMeSerializer(serializers.ModelSerializer):
-    """ Сериализатор получения информации о пользователе. """
+    """Сериализатор получения информации о пользователе."""
 
     def validate(self, data):
 
@@ -112,7 +115,7 @@ class GetInfoAboutMeSerializer(serializers.ModelSerializer):
 
 
 class CertainUserSerializer(serializers.ModelSerializer):
-    """ Сериализатор для конкретного пользователя. """
+    """Сериализатор для конкретного пользователя."""
 
     class Meta:
         model = User
@@ -127,7 +130,8 @@ class CertainUserSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    """ Сериализатор для создания и редактирования отзывов. """
+    """Сериализатор для создания и редактирования отзывов."""
+
     author = serializers.SlugRelatedField(
         slug_field="username", read_only=True
     )
@@ -160,7 +164,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """ Сериализатор для создания и редактирования комментариев на отзыв. """
+    """Сериализатор для создания и редактирования комментариев на отзыв."""
+
     author = serializers.SlugRelatedField(
         slug_field="username",
         read_only=True

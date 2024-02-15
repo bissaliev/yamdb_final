@@ -37,7 +37,8 @@ class CreateListDestroyViewSet(
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    """ Класс представления произведений. """
+    """Класс представления произведений."""
+
     queryset = Title.objects.all().annotate(Avg("reviews__score"))
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
@@ -52,7 +53,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
-    """ Класс представления категорий произведений. """
+    """Класс представления категорий произведений."""
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     filter_backends = (filters.SearchFilter,)
@@ -62,7 +64,8 @@ class CategoryViewSet(CreateListDestroyViewSet):
 
 
 class GenreViewSet(CreateListDestroyViewSet):
-    """ Класс представления жанров произведений. """
+    """Класс представления жанров произведений."""
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
@@ -72,7 +75,7 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class RegisterAndSendConfirmCodeViewSet(APIView):
-    """ Регистрируем пользователя совместно с выдачей кода. """
+    """Регистрируем пользователя совместно с выдачей кода."""
 
     permission_classes = [AllowAny]
 
@@ -107,7 +110,7 @@ class RegisterAndSendConfirmCodeViewSet(APIView):
 
 
 class GetCustomTokenViewSet(APIView):
-    """ Получаум кастомный токен. """
+    """Получаем кастомный токен."""
 
     permission_classes = [AllowAny]
 
@@ -141,7 +144,7 @@ class GetOrCreateUsers(
     mixins.ListModelMixin,
     viewsets.GenericViewSet
 ):
-    """ Получаем список пользователей или создаём пользователя. """
+    """Получаем список пользователей или создаём пользователя."""
 
     queryset = User.objects.all()
     serializer_class = GetOrCreateUsersSerializer
@@ -156,7 +159,8 @@ class GetOrCreateUsers(
         permission_classes=[IsAuthenticated],
     )
     def me(self, request):
-        """ Методы get и patch к пользователю отправившему запрос. """
+        """Методы get и patch к пользователю отправившему запрос."""
+
         user = get_object_or_404(User, pk=request.user.id)
 
         if request.method == "GET":
@@ -177,7 +181,8 @@ class GetOrCreateUsers(
 
 
 class CertainUser(viewsets.ViewSet):
-    """ Методы get patch и delete к конкретному юзеру. """
+    """Методы get patch и delete к конкретному юзеру."""
+
     lookup_field = 'username'
     permission_classes = [IsAdminOrSuperuser]
 
@@ -206,6 +211,8 @@ class CertainUser(viewsets.ViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """Класс представления отзывов."""
+
     serializer_class = ReviewSerializer
     permission_classes = [ISAdminAuthorOrSuperuser]
 
@@ -219,6 +226,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Класс представление комментариев."""
+
     serializer_class = CommentSerializer
     permission_classes = [ISAdminAuthorOrSuperuser]
 
