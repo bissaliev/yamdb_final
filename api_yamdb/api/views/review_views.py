@@ -7,7 +7,7 @@ from api.serializers.review_serializers import (
     GenreSerializer,
     ReviewSerializer,
     TitleReadSerializer,
-    TitleSerializer,
+    TitleCreateSerializer,
 )
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -21,8 +21,12 @@ from reviews.models import Category, Genre, Review, Title
 class TitleViewSet(viewsets.ModelViewSet):
     """Класс представления произведений."""
 
-    queryset = Title.objects.all().annotate(rating_avg=Avg("reviews__score"))
-    serializer_class = TitleSerializer
+    queryset = (
+        Title.objects.select_related("category")
+        .prefetch_related("genre", "reviews")
+        .annotate(rating_avg=Avg("reviews__score"))
+    )
+    serializer_class = TitleCreateSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     permission_classes = [ISAdminOnlyEdit]
@@ -31,7 +35,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ("list", "retrieve"):
             return TitleReadSerializer
 
-        return TitleSerializer
+        return self.serializer_class
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
@@ -61,12 +65,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [ISAdminAuthorOrSuperuser]
 
     def get_queryset(self):
-        title = get_object_or_404(Title, pk=self.kwargs.get("title_id"))
+        title = get_object_or_404(
+            Title.objects.prefetch_related("reviews__author"),
+            pk=self.kwargs.get("title_id"),
+        )
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title = get_object_or_404(Title, pk=self.kwargs.get("title_id"))
-        serializer.save(author=self.request.user, title=title)
+        serializer.save(author=self.request.user)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

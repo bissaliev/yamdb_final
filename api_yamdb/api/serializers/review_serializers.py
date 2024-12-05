@@ -8,27 +8,25 @@ class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для получения и создания категорий произведений."""
 
     class Meta:
+        model = Category
         fields = (
             "name",
             "slug",
         )
-        model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор для получения и создания жанров произведений."""
 
     class Meta:
+        model = Genre
         fields = (
             "name",
             "slug",
         )
-        model = Genre
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания и редактирования произведений."""
-
+class TitleBaseSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         slug_field="slug", queryset=Category.objects.all()
     )
@@ -37,6 +35,7 @@ class TitleSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+        model = Title
         fields = (
             "id",
             "name",
@@ -45,27 +44,24 @@ class TitleSerializer(serializers.ModelSerializer):
             "category",
             "genre",
         )
-        model = Title
 
 
-class TitleReadSerializer(serializers.ModelSerializer):
+class TitleCreateSerializer(TitleBaseSerializer):
+    """Сериализатор для создания и редактирования произведений."""
+
+    pass
+
+
+class TitleReadSerializer(TitleBaseSerializer):
     """Сериализатор для получения произведений."""
 
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
     rating = serializers.IntegerField(source="rating_avg", read_only=True)
 
-    class Meta:
+    class Meta(TitleBaseSerializer.Meta):
         model = Title
-        fields = (
-            "id",
-            "name",
-            "year",
-            "rating",
-            "description",
-            "genre",
-            "category",
-        )
+        fields = TitleBaseSerializer.Meta.fields + ("rating",)
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -74,27 +70,36 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field="username", read_only=True
     )
-    title = serializers.SlugRelatedField(read_only=True, slug_field="id")
 
     class Meta:
         model = Review
-        fields = "__all__"
+        fields = ("id", "text", "author", "score", "pub_date")
+
+        extra_kwargs = {
+            "score": {
+                "error_messages": {
+                    "min_value": "Минимальное значение должно быть 1.",
+                    "max_value": "Максимальное значение должно быть 10.",
+                    "invalid": "Введите корректное целое число.",
+                }
+            },
+            "text": {
+                "error_messages": {"blank": "Это поле не может быть пустым."}
+            },
+        }
 
     def validate(self, data):
         request = self.context["request"]
         title_id = self.context["view"].kwargs.get("title_id")
-        score = data["score"]
+        title = get_object_or_404(Title, pk=title_id)
 
         if request.method != "POST":
             return data
-        if Review.objects.filter(
-            title=get_object_or_404(Title, pk=title_id), author=request.user
-        ).exists():
+        if Review.objects.filter(title=title, author=request.user).exists():
             raise ValidationError(
-                "Вы можете оставить только " "один отзыв на произведение"
+                "Вы можете оставить только один отзыв на произведение"
             )
-        if 0 > score > 10:
-            raise ValidationError("Оценка")
+        data["title"] = title
 
         return data
 
