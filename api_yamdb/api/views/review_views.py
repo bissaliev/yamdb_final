@@ -6,16 +6,14 @@ from api.serializers.review_serializers import (
     CommentSerializer,
     GenreSerializer,
     ReviewSerializer,
-    TitleReadSerializer,
     TitleCreateSerializer,
+    TitleReadSerializer,
 )
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
 from reviews.models import Category, Genre, Review, Title
-
-# TODO: Добавить использование select_related & prefetch_related
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -61,13 +59,16 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """Отзывы."""
+
     serializer_class = ReviewSerializer
     permission_classes = [ISAdminAuthorOrSuperuser]
 
     def get_queryset(self):
+        title_id = self.kwargs.get("title_id")
         title = get_object_or_404(
             Title.objects.prefetch_related("reviews__author"),
-            pk=self.kwargs.get("title_id"),
+            pk=title_id,
         )
         return title.reviews.all()
 
@@ -76,13 +77,18 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Комментарии."""
+
     serializer_class = CommentSerializer
     permission_classes = [ISAdminAuthorOrSuperuser]
 
     def get_queryset(self):
-        pk = self.kwargs.get("review_id")
+        review_id = self.kwargs.get("review_id")
+        title_id = self.kwargs.get("title_id")
         review = get_object_or_404(
-            Review, pk=pk, title=self.kwargs.get("title_id")
+            Review.objects.prefetch_related("comments__author"),
+            pk=review_id,
+            title_id=title_id,
         )
         return review.comments.all()
 
