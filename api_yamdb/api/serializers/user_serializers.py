@@ -1,30 +1,58 @@
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from users.models import USER, User
+from users.models import USER
+from users.utils import generation_confirm_code, send_conf_code
+
+User = get_user_model()
+
+CACHE_KEY = settings.CACHE_KEY_CONFIRM_CODE
+CACHE_TIMEOUT = settings.CACHE_TIMEOUT
 
 
-class RegisterAndSendConfirmCodeSerializer(serializers.ModelSerializer):
-    """Сериализатор отправки кода на email."""
+class SendConfirmCodeSerializer(serializers.Serializer):
+    """Отправка кода верификации на email пользователя."""
 
-    confirmation_code = serializers.CharField(required=False, write_only=True)
+    email = serializers.EmailField(required=True)
 
-    def validate(self, data):
-        username = data["username"]
-        if username == "me":
-            raise ValidationError("Запрещённое имя пользователя.")
-        return data
-
-    class Meta:
-        fields = ("email", "confirmation_code", "username")
-        model = User
+    def save(self):
+        """Генерация код верификации и отправка пользователю на email."""
+        confirm_code = generation_confirm_code()
+        email = self.validated_data["email"]
+        send_conf_code(email, confirm_code)
+        cache.set(f"{CACHE_KEY}_{email}", confirm_code, timeout=CACHE_TIMEOUT)
 
 
 class CustomGetTokenSerializer(serializers.Serializer):
-    """Сериализатор получения токена."""
+    """
+    Верификация кода подтверждения, отправленный на email пользователя,
+    со значением, сохранённым в кеше.
+    """
 
-    # TODO: Проверка кода подтверждения
-    confirmation_code = serializers.CharField()
-    username = serializers.CharField()
+    email = serializers.EmailField(required=True)
+    confirmation_code = serializers.CharField(
+        required=True, min_length=6, max_length=6, label="Код верификации"
+    )
+
+    def validate(self, attrs):
+        """Верифицируем код подтверждения."""
+        confirm_code = attrs.get("confirmation_code")
+        email = attrs.get("email")
+        cache_confirm_code = cache.get(f"{CACHE_KEY}_{email}")
+        if cache_confirm_code is None or confirm_code != cache_confirm_code:
+            raise serializers.ValidationError(
+                "Неверный код верификации или код просрочен."
+            )
+        cache.delete(f"{CACHE_KEY}_{email}")
+        return attrs
+
+    def save(self):
+        """Получаем или сохраняем пользователя и возвращаем его."""
+        email = self.validated_data["email"]
+        user, _ = User.objects.get_or_create(email=email)
+        return user
 
 
 class BaseUserSerializer(serializers.ModelSerializer):

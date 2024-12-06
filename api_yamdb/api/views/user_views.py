@@ -1,14 +1,13 @@
-import random
-
 from api.permissions import IsAdminOrSuperuser
 from api.serializers.user_serializers import (
     CertainUserSerializer,
     CustomGetTokenSerializer,
     GetInfoAboutMeSerializer,
     GetOrCreateUsersSerializer,
-    RegisterAndSendConfirmCodeSerializer,
+    SendConfirmCodeSerializer,
 )
-from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
@@ -16,76 +15,46 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from users.models import User
 
-from api_yamdb.settings import EMAIL_HOST_USER
+User = get_user_model()
 
-
-class RegisterAndSendConfirmCodeViewSet(APIView):
-    """Регистрируем пользователя совместно с выдачей кода."""
-
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = RegisterAndSendConfirmCodeSerializer(data=request.data)
-
-        serializer.is_valid(raise_exception=True)
-        confirmation_code = ""
-        # TODO: Улучшить генерацию кода подтверждения
-        for i in range(7):
-            confirmation_code += str(random.randint(0, 9))
-
-        try:
-            user = User.objects.get(
-                username=serializer.validated_data.get("username")
-            )
-            user.confirmation_code = confirmation_code
-            user.save()
-        except User.DoesNotExist:
-            serializer.save(confirmation_code=confirmation_code)
-
-        # Отправляем письмо с кодом
-        send_mail(
-            "Подтверждение почты",
-            (
-                f"Ваш код подтверждения: {confirmation_code}\n"
-                f"Никнейм: {serializer.validated_data.get('username')}\n"
-            ),
-            EMAIL_HOST_USER,
-            [serializer.validated_data.get("email")],
-        )
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+CACHE_TIMEOUT = settings.CACHE_TIMEOUT
 
 
-class GetCustomTokenViewSet(APIView):
-    """Получаум кастомный токен."""
+class SendConfirmCodeViewSet(APIView):
+    """Отправка кода верификации на указанный email-адрес."""
 
     permission_classes = [AllowAny]
+    serializer_class = SendConfirmCodeSerializer
 
     def post(self, request):
-        serializer = CustomGetTokenSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(
-            User,
-            username=serializer.validated_data["username"],
-        )
-
-        if (
-            user.confirmation_code
-            == serializer.validated_data["confirmation_code"]
-        ):
-            refresh = RefreshToken.for_user(user)
-
-            return Response(
-                {"token": str(refresh.access_token)},
-                status=status.HTTP_200_OK,
-            )
-
+        serializer.save()
+        timeout_in_min = CACHE_TIMEOUT // 60
         return Response(
-            "Неверный ключ доступа!", status=status.HTTP_400_BAD_REQUEST
+            {
+                "message": (
+                    "Код верификации отправлен на ваш email. "
+                    f"Он будет действовать в течение {timeout_in_min} минут"
+                )
+            },
+            status=status.HTTP_200_OK,
         )
+
+
+class GetTokenViewSet(APIView):
+    """Получаем токен после подтверждения кода верификации."""
+
+    permission_classes = [AllowAny]
+    serializer_class = CustomGetTokenSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        token = user.get_token()
+        return Response(token, status=status.HTTP_200_OK)
 
 
 class GetOrCreateUsers(

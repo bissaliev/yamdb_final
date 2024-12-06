@@ -166,13 +166,22 @@ SIMPLE_JWT = {
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
     "JTI_CLAIM": "jti",
     "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
-    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
+    # "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
+    "SLIDING_TOKEN_LIFETIME": timedelta(days=5),
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
+
+EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, "emails")
 
 EMAIL_HOST = "smtp.yandex.com"
 EMAIL_PORT = 465
 EMAIL_HOST_USER = "send.confirm.code@yandex.ru"
-EMAIL_HOST_PASSWORD = "wnwnvvcvrqvqyavd"
+# EMAIL_HOST_PASSWORD = "wnwnvvcvrqvqyavd"
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
+
+# Ключ кеша для кода верификации
+CACHE_KEY_CONFIRM_CODE = "confirmation_code"
+# Время хранения кеша для кода верификации в секундах
+CACHE_TIMEOUT = 300

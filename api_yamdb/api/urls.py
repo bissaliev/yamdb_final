@@ -7,9 +7,9 @@ from api.views.review_views import (
 )
 from api.views.user_views import (
     CertainUser,
-    GetCustomTokenViewSet,
+    GetTokenViewSet,
     GetOrCreateUsers,
-    RegisterAndSendConfirmCodeViewSet,
+    SendConfirmCodeViewSet,
 )
 from django.urls import include, path
 from rest_framework import routers
@@ -17,8 +17,11 @@ from rest_framework import routers
 app_name = "api"
 
 router_v1 = routers.SimpleRouter()
+# users
 router_v1.register(r"users", GetOrCreateUsers, basename="users")
 router_v1.register(r"users", CertainUser, basename="users_certain")
+
+# reviews
 router_v1.register("titles", TitleViewSet, basename="titles")
 router_v1.register("categories", CategoryViewSet, basename="categories")
 router_v1.register("genres", GenreViewSet, basename="genres")
@@ -32,11 +35,11 @@ router_v1.register(
 )
 
 auth_urls = [
-    path("token/", GetCustomTokenViewSet.as_view(), name="get_token"),
+    path("token/", GetTokenViewSet.as_view(), name="get_token"),
     path(
-        "signup/",
-        RegisterAndSendConfirmCodeViewSet.as_view(),
-        name="get_conf_code",
+        "send_confirm_code/",
+        SendConfirmCodeViewSet.as_view(),
+        name="send_confirm_code",
     ),
 ]
 
