@@ -1,17 +1,14 @@
 from api.permissions import IsAdminOrSuperuser
 from api.serializers.user_serializers import (
-    CertainUserSerializer,
     CustomGetTokenSerializer,
-    GetInfoAboutMeSerializer,
-    GetOrCreateUsersSerializer,
     SendConfirmCodeSerializer,
+    UserSerializer,
 )
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, status, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -30,7 +27,7 @@ class SendConfirmCodeViewSet(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save()  # Отправка кода верификации
         timeout_in_min = CACHE_TIMEOUT // 60
         return Response(
             {
@@ -57,67 +54,29 @@ class GetTokenViewSet(APIView):
         return Response(token, status=status.HTTP_200_OK)
 
 
-class GetOrCreateUsers(
-    mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet
-):
-    """Получаем список пользователей или создаём пользователя."""
+class UserViewSet(viewsets.ModelViewSet):
+    """Пользователи."""
 
     queryset = User.objects.all()
-    serializer_class = GetOrCreateUsersSerializer
-    pagination_class = LimitOffsetPagination
+    serializer_class = UserSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ["=username"]
+    search_fields = ["=username", "email"]
     permission_classes = [IsAdminOrSuperuser]
 
     @action(
-        detail=False,
         methods=["GET", "PATCH"],
+        detail=False,
         permission_classes=[IsAuthenticated],
     )
     def me(self, request):
-        """Методы get и patch к пользователю отправившему запрос."""
+        """Профиль пользователя."""
         user = get_object_or_404(User, pk=request.user.id)
-
-        if request.method == "GET":
-            serializer = GetInfoAboutMeSerializer(user)
-
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        serializer = GetInfoAboutMeSerializer(
-            user,
-            data=request.data,
-            partial=True,
-            context={"request": request},
+        if self.request.method == "GET":
+            serializer = self.serializer_class(user)
+            return Response(serializer.data)
+        serializer = self.serializer_class(
+            user, request.data, partial=True, context={"request": request}
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CertainUser(viewsets.ViewSet):
-    """Методы get patch и delete к конкретному юзеру."""
-
-    lookup_field = "username"
-    permission_classes = [IsAdminOrSuperuser]
-
-    def retrieve(self, request, username=None):
-        user = get_object_or_404(User, username=username)
-        serializer = CertainUserSerializer(user)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def partial_update(self, request, username=None):
-        user = get_object_or_404(User, username=username)
-        serializer = CertainUserSerializer(
-            user, data=request.data, partial=True
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def destroy(self, request, username=None):
-        user = get_object_or_404(User, username=username)
-        user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

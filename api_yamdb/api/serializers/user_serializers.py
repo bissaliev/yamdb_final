@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from users.models import USER
 from users.utils import generation_confirm_code, send_conf_code
 
 User = get_user_model()
@@ -55,8 +54,8 @@ class CustomGetTokenSerializer(serializers.Serializer):
         return user
 
 
-class BaseUserSerializer(serializers.ModelSerializer):
-    """Базовый класс сериализатор пользователя."""
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователя."""
 
     class Meta:
         model = User
@@ -68,27 +67,16 @@ class BaseUserSerializer(serializers.ModelSerializer):
             "bio",
             "role",
         )
-        extra_kwargs = {"role": {"read_only": True}}
 
+    def validate_username(self, value):
+        if value == "me":
+            raise serializers.ValidationError(
+                "Вы не можете создать никнейм с данным значением."
+            )
 
-class GetOrCreateUsersSerializer(BaseUserSerializer):
-    """Создаём или получаем пользователей."""
-
-    pass
-
-
-class GetInfoAboutMeSerializer(BaseUserSerializer):
-    """Сериализатор получения информации о пользователе."""
-
-    # TODO: Возможно переместить проверку в пермишены
     def validate(self, data):
-        if self.context.get("request").user.role == USER and data.get("role"):
+        current_user = self.context.get("request").user
+        if data.get("role") and not current_user.is_admin:
             raise ValidationError("Вам нельзя менять свою роль.")
 
         return data
-
-
-class CertainUserSerializer(BaseUserSerializer):
-    """Сериализатор для конкретного пользователя."""
-
-    pass

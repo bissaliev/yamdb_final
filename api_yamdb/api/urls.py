@@ -6,10 +6,9 @@ from api.views.review_views import (
     TitleViewSet,
 )
 from api.views.user_views import (
-    CertainUser,
     GetTokenViewSet,
-    GetOrCreateUsers,
     SendConfirmCodeViewSet,
+    UserViewSet,
 )
 from django.urls import include, path
 from rest_framework import routers
@@ -17,9 +16,9 @@ from rest_framework import routers
 app_name = "api"
 
 router_v1 = routers.SimpleRouter()
+
 # users
-router_v1.register(r"users", GetOrCreateUsers, basename="users")
-router_v1.register(r"users", CertainUser, basename="users_certain")
+router_v1.register("users", UserViewSet, basename="user")
 
 # reviews
 router_v1.register("titles", TitleViewSet, basename="titles")
@@ -34,13 +33,14 @@ router_v1.register(
     basename="comments",
 )
 
+# authentication
 auth_urls = [
-    path("token/", GetTokenViewSet.as_view(), name="get_token"),
     path(
         "send_confirm_code/",
         SendConfirmCodeViewSet.as_view(),
         name="send_confirm_code",
     ),
+    path("token/", GetTokenViewSet.as_view(), name="get_token"),
 ]
 
 urlpatterns = [

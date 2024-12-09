@@ -1,44 +1,52 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-ADMIN = "admin"
-MODERATOR = "moderator"
-USER = "user"
-USER_ROLES = (
-    (ADMIN, "Administrator"),
-    (MODERATOR, "Moderator"),
-    (USER, "User"),
-)
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class User(AbstractUser):
-    """ Переопределяем поля пользователя. """
+    """Модель пользователя."""
 
-    email = models.EmailField(_("email address"), unique=True)
+    class Role(models.TextChoices):
+        ADMIN = "admin"
+        MODERATOR = "moderator"
+        USER = "user"
+
+    email = models.EmailField(_("email address"), unique=True, db_index=True)
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name="Пользователь",
+    )
     bio = models.TextField(
         "Биография",
         blank=True,
     )
-    password = models.CharField(max_length=100, blank=True, null=True)
     role = models.CharField(
-        "Роль", max_length=30,
-        choices=USER_ROLES, default="user"
+        "Роль", max_length=30, choices=Role, default=Role.USER
     )
-    confirmation_code = models.CharField(max_length=100)
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username"]
 
     @property
     def is_admin(self):
         return (
-            ADMIN in self.role
+            self.Role.ADMIN.value in self.role
             or self.is_staff
             or self.is_superuser
         )
 
     @property
     def is_moderator(self):
-        return MODERATOR in self.role
+        return self.Role.MODERATOR.value in self.role
 
     @property
     def is_user(self):
-        return USER in self.role
+        return self.Role.USER.value in self.role
+
+    def get_token(self) -> dict[str, str]:
+        refresh = RefreshToken.for_user(self)
+        return {"token": str(refresh.access_token)}
