@@ -2,25 +2,20 @@ from rest_framework import permissions
 
 
 class IsAdminOrSuperuser(permissions.BasePermission):
-    """ Доступ только для админов или суперюзеров. """
+    """Доступ только для админов или суперюзеров."""
 
     def has_permission(self, request, view):
-
-        return (
-            request.user.is_admin
-            if request.user.is_authenticated else False
-        )
+        return request.user.is_authenticated and request.user.is_admin
 
 
 class ISAdminOnlyEdit(permissions.BasePermission):
-    """ Доступ только для админов или суперюзеров. """
+    """Доступ только для админов или суперюзеров."""
 
     def has_permission(self, request, view):
-
         return (
-            request.user.is_admin
-            if request.user.is_authenticated
-            else request.method in permissions.SAFE_METHODS
+            request.method in permissions.SAFE_METHODS
+            or request.user.is_authenticated
+            and request.user.is_admin
         )
 
 
@@ -32,14 +27,12 @@ class ISAdminAuthorOrSuperuser(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-
         return (
             request.user.is_authenticated
             or request.method in permissions.SAFE_METHODS
         )
 
     def has_object_permission(self, request, view, obj):
-
         return (
             request.user == obj.author
             or request.user.is_admin
