@@ -105,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "UTC"
 
@@ -121,7 +121,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
-# STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_ROOT = os.path.join(BASE_DIR, "collectstatic")
 
 MEDIA_URL = "/media/"
@@ -167,18 +166,18 @@ SIMPLE_JWT = {
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
     "JTI_CLAIM": "jti",
     "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
-    # "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
-    "SLIDING_TOKEN_LIFETIME": timedelta(days=5),
+    "SLIDING_TOKEN_LIFETIME": timedelta(days=1),
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
 
-EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+# EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, "emails")
 
-EMAIL_HOST = "smtp.yandex.com"
-EMAIL_PORT = 465
-EMAIL_HOST_USER = "send.confirm.code@yandex.ru"
-# EMAIL_HOST_PASSWORD = "wnwnvvcvrqvqyavd"
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 
@@ -186,3 +185,7 @@ EMAIL_USE_SSL = True
 CACHE_KEY_CONFIRM_CODE = "confirmation_code"
 # Время хранения кеша для кода верификации в секундах
 CACHE_TIMEOUT = 300
+
+# Celery settings
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
