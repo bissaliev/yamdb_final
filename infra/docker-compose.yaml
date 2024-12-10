@@ -1,25 +1,51 @@
-version: '3.8'
+version: '3.9'
 
 services:
   db:
-    image: postgres:13.0-alpine
+    image: postgres:15
+    container_name: db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
-      - ./.env
+      - ../.env.docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      # start_period: 30s
+  redis:
+    image: redis:latest
+    container_name: redis-container
+    ports:
+      - "6379:6379"
   web:
-    image: bissaliev/api_yamdb:v2.0
+    build: ../
     restart: always
+    container_name: web
     volumes:
       - static_value:/app/collectstatic/
       - media_value:/app/media/
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
-      - ./.env
+      - ../.env.docker
+    command: ["bash", "/app/entrypoint.sh"]
+
+  celery:
+    build: ../
+    restart: always
+    container_name: celery-worker
+    env_file:
+      - ../.env.docker
+    command: celery -A api_yamdb worker --loglevel=info
+    depends_on:
+      - redis
 
   nginx:
     image: nginx:1.21.3-alpine
+    container_name: nginx
     ports:
       - "80:80"
     volumes:
