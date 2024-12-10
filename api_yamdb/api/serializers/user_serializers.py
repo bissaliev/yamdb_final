@@ -4,6 +4,7 @@ from django.core.cache import cache
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from users.utils import generation_confirm_code, send_conf_code
+from api.tasks import send_confirm_code
 
 User = get_user_model()
 
@@ -20,7 +21,8 @@ class SendConfirmCodeSerializer(serializers.Serializer):
         """Генерация код верификации и отправка пользователю на email."""
         confirm_code = generation_confirm_code()
         email = self.validated_data["email"]
-        send_conf_code(email, confirm_code)
+        send_confirm_code.delay(email, confirm_code)
+        # send_conf_code(email, confirm_code)
         cache.set(f"{CACHE_KEY}_{email}", confirm_code, timeout=CACHE_TIMEOUT)
 
 
