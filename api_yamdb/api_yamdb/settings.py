@@ -181,11 +181,20 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 
+# Celery settings
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+
+
+# Cache settings
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.getenv("CACHE_SERVER"),
+    }
+}
+
 # Ключ кеша для кода верификации
 CACHE_KEY_CONFIRM_CODE = "confirmation_code"
 # Время хранения кеша для кода верификации в секундах
 CACHE_TIMEOUT = 300
-
-# Celery settings
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
