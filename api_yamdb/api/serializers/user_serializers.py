@@ -1,15 +1,10 @@
-from django.conf import settings
+from api.tasks import send_confirm_code
+from api.utils import verify_confirm_code
 from django.contrib.auth import get_user_model
-from django.core.cache import cache
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from users.utils import generation_confirm_code, send_conf_code
-from api.tasks import send_confirm_code
 
 User = get_user_model()
-
-CACHE_KEY = settings.CACHE_KEY_CONFIRM_CODE
-CACHE_TIMEOUT = settings.CACHE_TIMEOUT
 
 
 class SendConfirmCodeSerializer(serializers.Serializer):
@@ -19,11 +14,8 @@ class SendConfirmCodeSerializer(serializers.Serializer):
 
     def save(self):
         """Генерация код верификации и отправка пользователю на email."""
-        confirm_code = generation_confirm_code()
         email = self.validated_data["email"]
-        send_confirm_code.delay(email, confirm_code)
-        # send_conf_code(email, confirm_code)
-        cache.set(f"{CACHE_KEY}_{email}", confirm_code, timeout=CACHE_TIMEOUT)
+        send_confirm_code.delay(email)
 
 
 class CustomGetTokenSerializer(serializers.Serializer):
@@ -41,12 +33,10 @@ class CustomGetTokenSerializer(serializers.Serializer):
         """Верифицируем код подтверждения."""
         confirm_code = attrs.get("confirmation_code")
         email = attrs.get("email")
-        cache_confirm_code = cache.get(f"{CACHE_KEY}_{email}")
-        if cache_confirm_code is None or confirm_code != cache_confirm_code:
+        if not verify_confirm_code(email, confirm_code):
             raise serializers.ValidationError(
                 "Неверный код верификации или код просрочен."
             )
-        cache.delete(f"{CACHE_KEY}_{email}")
         return attrs
 
     def save(self):
@@ -77,8 +67,11 @@ class UserSerializer(serializers.ModelSerializer):
             )
 
     def validate(self, data):
+        """Роль пользователя может изменить только администратор."""
         current_user = self.context.get("request").user
         if data.get("role") and not current_user.is_admin:
-            raise ValidationError("Вам нельзя менять свою роль.")
+            raise ValidationError(
+                "Роль пользователя может изменить только администратор."
+            )
 
         return data
