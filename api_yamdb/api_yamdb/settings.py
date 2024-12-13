@@ -6,16 +6,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+#  /home/../YaMDb/api_yamdb
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = os.getenv("SECRET_KEY", default="default")
 
 DEBUG = bool(os.getenv("DEBUG", False))
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["127.0.0.1"]
 
 
 INSTALLED_APPS = [
+    "debug_toolbar",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -28,7 +30,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "reviews.apps.ReviewsConfig",
-    "debug_toolbar",
 ]
 
 MIDDLEWARE = [
@@ -40,10 +41,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
-
-INTERNAL_IPS = [
-    "127.0.0.1",
 ]
 
 ROOT_URLCONF = "api_yamdb.urls"
@@ -67,25 +64,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "api_yamdb.wsgi.application"
 
-if os.getenv("DATABASE") == "postgres":
-    DATABASES = {
-        "default": {
-            "ENGINE": os.getenv(
-                "DB_ENGINE", default="django.db.backends.postgresql"
-            ),
-            "NAME": os.getenv("DB_NAME", default="default"),
-            "USER": os.getenv("POSTGRES_USER", default="default"),
-            "PASSWORD": os.getenv("POSTGRES_PASSWORD", default="default"),
-            "HOST": os.getenv("DB_HOST", default="default"),
-            "PORT": os.getenv("DB_PORT", default="default"),
-        }
+DATABASES = {
+    "default": {
+        "ENGINE": os.getenv(
+            "DB_ENGINE", default="django.db.backends.postgresql"
+        ),
+        "NAME": os.getenv("DB_NAME", default="postgres"),
+        "USER": os.getenv("POSTGRES_USER", default="postgres"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", default="postgres"),
+        "HOST": os.getenv("DB_HOST", default="localhost"),
+        "PORT": os.getenv("DB_PORT", default="5432"),
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
-        }
+}
+
+# При локальном тестирование
+if os.getenv("DB") == "sqlite":
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
     }
 
 
@@ -128,8 +124,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.BasicAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
@@ -143,8 +137,16 @@ REST_FRAMEWORK = {
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
 }
 
+# Аутентификация Для тестирования SQL-запросов в debug_toolbar через браузер
+REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].extend(
+    [
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ]
+)
+
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # Время жизни токена 1 день
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
@@ -170,10 +172,11 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
 
-# EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_FILE_PATH = os.path.join(BASE_DIR, "emails")
-
+# По умолчанию email будет выводиться в консоль
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+# Эти настройки необходимы, если определить SMTP backend
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = os.getenv("EMAIL_PORT")
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
@@ -181,12 +184,13 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 
-# Celery settings
+
+# Celery settings with Redis
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 
 
-# Cache settings
+# Cache settings with Redis
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -198,3 +202,5 @@ CACHES = {
 CACHE_KEY_CONFIRM_CODE = "confirmation_code"
 # Время хранения кеша для кода верификации в секундах
 CACHE_TIMEOUT = 300
+
+INTERNAL_IPS = ["127.0.0.1"]
