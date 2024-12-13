@@ -1,6 +1,7 @@
 version: '3.9'
 
 services:
+
   db:
     image: postgres:15
     container_name: db
@@ -8,17 +9,25 @@ services:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ../.env.docker
+    networks:
+      - yamdb
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
-      # start_period: 30s
+      start_period: 5s
+
+
   redis:
     image: redis:latest
     container_name: redis-container
     ports:
       - "6379:6379"
+    networks:
+      - yamdb
+
+
   web:
     build: ../
     restart: always
@@ -32,6 +41,9 @@ services:
     env_file:
       - ../.env.docker
     command: ["bash", "/app/entrypoint.sh"]
+    networks:
+      - yamdb
+
 
   celery:
     build: ../
@@ -40,8 +52,11 @@ services:
     env_file:
       - ../.env.docker
     command: celery -A api_yamdb worker --loglevel=info
+    networks:
+      - yamdb
     depends_on:
       - redis
+
 
   nginx:
     image: nginx:1.21.3-alpine
@@ -53,8 +68,16 @@ services:
       - static_value:/var/html/static/
       - media_value:/var/html/media/
       - ../docs/redoc.html:/usr/share/nginx/html/api/docs/redoc.html
+    networks:
+      - yamdb
     depends_on:
       - web
+
+
+networks:
+  yamdb:
+    driver: bridge
+
 
 volumes:
   static_value:
