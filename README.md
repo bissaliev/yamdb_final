@@ -1,222 +1,91 @@
-# yamdb_final
-![Django-app workflow](https://github.com/bissaliev/yamdb_final/actions/workflows/yamdb_workflow.yml/badge.svg)
+# API YAMDB
 
-API YAMDB
-API для получения информации и обсуждения наиболее интересных произведений. Для автоматизации развертывания на боевых серверах используется среда виртуализации Docker, а также Docker-compose - инструмент для запуска многоконтейнерных приложений.
+### Описание
 
-Стек технологий:
-Python 3
-DRF (Django REST framework)
-Django ORM
-Docker
-Gunicorn
-nginx
-Яндекс Облако(Ubuntu 18.04)
-Django 2.2 TLS
-PostgreSQL
-GIT
+API для получения информации и обсуждения наиболее интересных произведений.
+Проект **YaMDb** собирает отзывы (**Review**) пользователей на произведения (**Titles**). Произведения делятся на категории: «Книги», «Фильмы», «Музыка». Список категорий (**Category**) может быть расширен администратором (например, можно добавить категорию «Изобразительное искусство» или «Ювелирка»).
+Произведению может быть присвоен жанр (**Genre**) из списка предустановленных (например, «Сказка», «Рок» или «Артхаус»). Новые жанры может создавать только администратор.
+Пользователи оставляют к произведениям текстовые отзывы (**Review**) и ставят произведению оценку в диапазоне от одного до десяти (целое число); из пользовательских оценок формируется усреднённая оценка произведения — рейтинг (целое число). На одно произведение пользователь может оставить только один отзыв.
+Аутентификация осуществляется посредством отправки пользователем своего адреса email, но который будет отправлен 6-значный код подтверждения. Пользователь должен будет ввести свой email-адрес и код подтверждение, отправленный на этот адрес. Если пользователь впервые осуществляет аутентификацию, то он будет сохранен в БД. Если аутентификация проходит успешно, то пользователю будет выдан JWT-токен.
 
-О проекте:
-Реализована регистрация с кодом подтверждения и дальнейшая авторизация с использованием JWT токена, при отправке запроса к API.
+### Пользовательские роли
 
-Проект YaMDb собирает отзывы (Review) пользователей на произведения (Titles). Произведения делятся на категории: «Книги», «Фильмы», «Музыка». Список категорий (Category) может быть расширен администратором (например, можно добавить категорию «Изобразительное искусство» или «Ювелирка»).
+-   **Аноним** — может просматривать описания произведений, читать отзывы и комментарии.
+-   **Аутентифицированный пользователь (user)** — может, как и **Аноним**, читать всё, дополнительно он может публиковать отзывы и ставить оценку произведениям, может комментировать чужие отзывы; может редактировать и удалять свои отзывы и комментарии. Эта роль присваивается по умолчанию каждому новому пользователю.
+-   **Модератор (moderator)** — те же права, что и у **Аутентифицированного пользователя** плюс право удалять любые отзывы и комментарии.
+-   **Администратор (admin)** — полные права на управление всем контентом проекта. Может создавать и удалять произведения, категории и жанры. Может назначать роли пользователям.
+-   **Суперюзер Django** — обладает правами **администратора (admin)**
 
-В каждой категории есть произведения: книги, фильмы или музыка. Например, в категории «Книги» могут быть произведения «Винни-Пух и все-все-все» и «Марсианские хроники», а в категории «Музыка» — песня «Давеча» группы «Насекомые» и вторая сюита Баха.
+### Алгоритм аутентификации пользователей
 
-Произведению может быть присвоен жанр (Genre) из списка предустановленных (например, «Сказка», «Рок» или «Артхаус»). Новые жанры может создавать только администратор.
+Пользователь отправляет POST-запрос с параметром `email` на эндпоинт `/api/v1/auth/send_confirm_code/`.
+YaMDB отправляет письмо с кодом подтверждения (`confirmation_code`) на адрес `email`.
+Пользователь отправляет POST-запрос с параметрами `email` и `confirmation_code` на эндпоинт `/api/v1/auth/token/`, в ответе на запрос ему приходит token (JWT-токен).
+При желании пользователь отправляет PATCH-запрос на эндпоинт /api/v1/users/me/ и заполняет поля в своём профайле (описание полей — в документации).
 
-Благодарные или возмущённые пользователи оставляют к произведениям текстовые отзывы (Review) и ставят произведению оценку в диапазоне от одного до десяти (целое число); из пользовательских оценок формируется усреднённая оценка произведения — рейтинг (целое число). На одно произведение пользователь может оставить только один отзыв.
+### Стек технологий:
 
-Документация и возможности API:
-К проекту подключен redoc. Для просмотра документации используйте эндпойнт redoc/
+-   `Python 3.12`
+-   `Django REST framework 3.15`
+-   `Django 5`
+-   `django-filter 24.3`
+-   `Gunicorn 23.0`
+-   `JWT`
+-   `Redis`
+-   `Celery`
+-   `NGINX`
+-   `Docker`
+-   `Docker Compose`
+-   `PostgreSQL`
+-   `GIT`
 
-## Workflow
-* tests - Проверка кода на соответствие стандарту PEP8 (с помощью пакета flake8) и запуск pytest. Дальнейшие шаги выполнятся только если push был в ветку master или main.
-* build_and_push_to_docker_hub - Сборка и доставка докер-образов на Docker Hub
-* deploy - Автоматический деплой проекта на боевой сервер. Выполняется копирование файлов из репозитория на сервер:
-* send_message - Отправка уведомления в Telegram
+### Документация и возможности API:
 
-### Подготовка для запуска workflow
-Создайте и активируйте виртуальное окружение, обновите pip:
-```
-python3 -m venv venv
-. venv/bin/activate
-python3 -m pip install --upgrade pip
-```
-Запустите автотесты:
-```
-pytest
-```
-Отредактируйте файл `nginx/default.conf` и в строке `server_name` впишите IP виртуальной машины (сервера).  
-Скопируйте подготовленные файлы `docker-compose.yaml` и `nginx/default.conf` из вашего проекта на сервер:
-```
-scp docker-compose.yaml <username>@<host>/home/<username>/docker-compose.yaml
-sudo mkdir nginx
-scp default.conf <username>@<host>/home/<username>/nginx/default.conf
-```
-В репозитории на Гитхабе добавьте данные в `Settings - Secrets - Actions secrets`:
-```
-DOCKER_USERNAME - имя пользователя в DockerHub
-DOCKER_PASSWORD - пароль пользователя в DockerHub
-HOST - ip-адрес сервера
-USER - пользователь
-SSH_KEY - приватный ssh-ключ (публичный должен быть на сервере)
-PASSPHRASE - кодовая фраза для ssh-ключа
-DB_ENGINE - django.db.backends.postgresql
-DB_NAME - postgres (по умолчанию)
-POSTGRES_USER - postgres (по умолчанию)
-POSTGRES_PASSWORD - postgres (по умолчанию)
-DB_HOST - db
-DB_PORT - 5432
-TELEGRAM_TO - id своего телеграм-аккаунта (можно узнать у @userinfobot, команда /start)
-TELEGRAM_TOKEN - токен бота (получить токен можно у @BotFather, /token, имя бота)
-```
-При внесении любых изменений в проект, после коммита и пуша
-```
-git add .
-git commit -m "..."
-git push
-```
-запускается набор блоков команд jobs (см. файл yamdb_workflow.yaml), т.к. команда `git push` является триггером workflow проекта.
-## Как развернуть проект локально:
+К проекту подключен redoc. Для просмотра документации используйте эндпойнт `/redoc/`
 
-Клонируйте репозиторий и перейдите в него в командной строке:
+### Примечания
+
+В данный момент проект осуществляет вывод email в консоль терминала.
+
+### Запуск проекта в `Docker`
+
+```bash
+git clone git@github.com:bissaliev/YaMDb.git
 ```
-git clone https://github.com/bissaliev/yamdb_final.git
-cd yamdb_final
+
+Создайте файл .env и определите в нем переменные:
+
 ```
-Создайте файл .env командой `touch .env` и добавьте в него переменные окружения для работы с базой данных:
-```
+DATABASE=postgres
 DB_ENGINE=django.db.backends.postgresql
-DB_NAME=postgres # имя базы данных
-POSTGRES_USER=postgres # логин для подключения к базе данных
-POSTGRES_PASSWORD=postgres # пароль для подключения к БД (установите свой)
-DB_HOST=db # название сервиса (контейнера)
-DB_PORT=5432 # порт для подключения к БД
-```
-В папке проекта создайте образ:
-```
-docker build -t username/imagename:version api_yamdb/.
-```
-Соберите контейнеры:
-```
-docker-compose -f infra/docker-compose.yaml up -d --build
-```
-или пересоберите:
-```
-docker-compose up -d --build
-```
-Выполните миграции:
-```
-(опционально) docker-compose exec web python manage.py makemigrations
-docker-compose exec web python manage.py migrate
-```
-Для входа внутрь контейнера используйте команду `exec`:
-```
-docker-compose exec web sh
-```
-или
-```
-docker-compose exec web python manage.py shell
-```
-или:
-```
-docker exec -it <container_id> bash
-```
-Загрузите тестовые данные в БД:
-```
-docker-compose exec web python manage.py loaddata fixtures.json
-```
-или
-```
-docker-compose -f infra/docker-compose.yaml exec web python manage.py loaddata fixtures.json
+DB_NAME=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+DB_HOST=db
+DB_PORT=5432
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
+CACHE_SERVER=redis://redis:6379
 ```
 
+Перейдите в директорию с файлом `docker-compose.yaml`:
 
-## Как развернуть проект на сервере:
-Установите соединение с сервером:
-```
-ssh username@server_address
-```
-Проверьте статус nginx:
-```
-sudo service nginx status
-```
-Если nginx запущен, остановите его:
-```
-sudo systemctl stop nginx
-```
-Установите Docker и Docker-compose:
-```
-sudo apt install docker.io
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-```
-Проверьте корректность установки Docker-compose:
-```
-sudo  docker-compose --version
-```
-Создайте папку `nginx`:
-```
-mkdir nginx
-```
-### После успешного деплоя:
-Соберите статические файлы (статику):
-```
-docker-compose exec web python manage.py collectstatic --no-input
-```
-Примените миграции:
-```
-(опционально) docker-compose exec web python manage.py makemigrations
-docker-compose exec web python manage.py migrate --noinput
-```
-Создайте суперпользователя:
-```
-docker-compose exec web python manage.py createsuperuser
-```
-При необходимости наполните базу тестовыми данными из ../yamdb_final/infra/:
-```
-docker exec -i infra_web_1 python manage.py loaddata --format=json - < fixtures.json
-```
-или
-```
-docker-compose exec web python manage.py loaddata fixtures.json
+```bash
+cd YaMDb/infra/
 ```
 
-Также можно выполнить эти действия внутри контейнера. Отобразите список работающих контейнеров:
-```
-sudo docker container ls -a
-```
-В списке контейнеров копируйте CONTAINER ID контейнера username/api_yamdb:latest (username - имя пользователя на DockerHub).   
-Выполните вход в контейнер:
-```
-sudo docker exec -it <CONTAINER_ID> bash
-```
-Внутри контейнера выполните миграции:
-```
-python manage.py migrate
-```
-При необходимости наполните базу данных начальными тестовыми данными:
-```
-python3 manage.py shell
+Запустите docker compose:
 
->>> from django.contrib.contenttypes.models import ContentType
->>> ContentType.objects.all().delete()
->>> quit()
-python manage.py loaddata infra/fixtures.json
-
-## Ссылки
-### Документация API YaMDb - эндпойнт:
-```json
-/redoc/
+```bash
+docker compose up --build
 ```
-http://158.160.41.34/redoc/
-### Развёрнутый проект:
-http://158.160.41.34/api/v1/  
-http://158.160.41.34/admin/
 
-### Разработчики:
+Чтобы остановить контейнеры нажмите клавиши `Ctrl + C` и выполните команду:
 
-- [@TemaKut](https://github.com/TemaKut)
-- [@AnaKuzi](https://github.com/AnaKuzi)
-- [@bissaliev](https://github.com/bissaliev)
+```bash
+docker compose down -v
+```
+
+### Разработчик:
+
+[Биссалиев Олег](https://github.com/bissaliev)
