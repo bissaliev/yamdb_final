@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "reviews.apps.ReviewsConfig",
+    # documentation
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -135,15 +137,16 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 5,
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 # Аутентификация Для тестирования SQL-запросов в debug_toolbar через браузер
-REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].extend(
-    [
-        "rest_framework.authentication.BasicAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
-    ]
-)
+# REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].extend(
+#     [
+#         "rest_framework.authentication.BasicAuthentication",
+#         "rest_framework.authentication.SessionAuthentication",
+#     ]
+# )
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # Время жизни токена 1 день
@@ -204,3 +207,53 @@ CACHE_KEY_CONFIRM_CODE = "confirmation_code"
 CACHE_TIMEOUT = 300
 
 INTERNAL_IPS = ["127.0.0.1"]
+
+
+# Настройки документации DRF Spectacular
+DESCRIPTION_DOC = """
+# Описание
+Проект **YaMDb** собирает отзывы пользователей на различные произведения.
+# Алгоритм регистрации и аутентификации пользователей
+1. Пользователь отправляет POST-запрос с указанием своего `email`
+на эндпоинт `/api/v1/auth/send_confirm_code/`.
+2. **YaMDB** отправляет письмо с кодом подтверждения (`confirmation_code`)
+на адрес  `email`.
+3. Пользователь отправляет POST-запрос с параметрами `email` и
+`confirmation_code` на эндпоинт `/api/v1/auth/token/`, в ответе на запрос ему
+приходит `token` (JWT-токен). Если пользователь ещё не зарегистрирован, то он
+автоматически сохраняется в БД.
+4. При желании пользователь отправляет PATCH-запрос на эндпоинт
+`/api/v1/users/me/` и заполняет поля в своём профайле
+(описание полей — в документации).
+# Пользовательские роли
+- **Аноним** — может просматривать описания произведений,
+читать отзывы и комментарии.
+- **Аутентифицированный пользователь** (`user`) — может, как и **Аноним**,
+читать всё, дополнительно он может публиковать отзывы и ставить оценку
+произведениям (фильмам/книгам/песенкам), может комментировать чужие отзывы;
+может редактировать и удалять **свои** отзывы и комментарии.
+Эта роль присваивается по умолчанию каждому новому пользователю.
+- **Модератор** (`moderator`) — те же права, что и у
+**Аутентифицированного пользователя** плюс право удалять **любые** отзывы
+и комментарии.
+- **Администратор** (`admin`) — полные права на управление
+всем контентом проекта. Может создавать и удалять произведения,
+категории и жанры. Может назначать роли пользователям.
+- **Суперюзер Django** — обладает правами администратора (`admin`)
+"""
+
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "YaMDb API",
+    "DESCRIPTION": DESCRIPTION_DOC,
+    "VERSION": "2.0.0",
+    "CONTACT": {
+        "name": "Биссалиев Олег",
+        "url": "https://github.com/bissaliev",
+        "email": "bissaliev21@gmail.com",
+    },
+    "SWAGGER_UI_SETTINGS": {
+        "docExpansion": "none",  # Настройка поведения Swagger UI
+        "defaultModelsExpandDepth": -1,  # Скрыть примеры моделей
+    },
+}

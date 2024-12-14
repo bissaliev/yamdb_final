@@ -9,7 +9,7 @@ class IsAdminOrSuperuser(permissions.BasePermission):
 
 
 class ISAdminOnlyEdit(permissions.BasePermission):
-    """Доступ только для админов или суперюзеров."""
+    """Просмотр доступен всем пользователям, изменение только администратора"""
 
     def has_permission(self, request, view):
         return (
