@@ -186,15 +186,15 @@ EMAIL_USE_SSL = True
 
 
 # Celery settings with Redis
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+CELERY_BROKER_URL = os.getenv("REDIS_SERVER")
+CELERY_RESULT_BACKEND = os.getenv("REDIS_SERVER")
 
 
 # Cache settings with Redis
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.getenv("CACHE_SERVER"),
+        "LOCATION": os.getenv("REDIS_SERVER"),
     }
 }
 
